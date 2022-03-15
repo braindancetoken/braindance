@@ -65,7 +65,7 @@ contract BDCLockPool {
                 value = value.add(
                     lockInfo
                         .lockedSnap
-                        .mul(dailyReleaseRate.mul(n).div(100))
+                        .mul(dailyReleaseRate.mul(100 - n).div(100))
                         .div(RATIO)
                         .mul(lastDay - decreaseDate[i])
                 );
@@ -76,7 +76,7 @@ contract BDCLockPool {
                 value = value.add(
                     lockInfo
                         .lockedSnap
-                        .mul(dailyReleaseRate.mul(i).div(100))
+                        .mul(dailyReleaseRate.mul(100 - i).div(100))
                         .div(RATIO)
                         .mul(lastDay - lockInfo.lastRewardDate)
                 );
@@ -124,9 +124,14 @@ contract BDCLockPool {
             return;
         }
         LockedToken storage lt = upgradeLockedTokens[referrer];
-        lt.unlocked = lt.unlocked.add(value.mul(10).div(100));
+        uint256 reward = value.mul(10).div(100);
+        uint256 _available = available(referrer);
+        if (reward.add(_available) > lt.locked) {
+            reward = lt.locked.sub(_available);
+        }
+        lt.unlocked = lt.unlocked.add(reward);
         totalReferralRewards[referrer] = totalReferralRewards[referrer].add(
-            value.mul(10).div(100)
+            reward
         );
     }
 
