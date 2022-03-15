@@ -162,6 +162,6 @@ contract BDCLockPool {
     }
 
     function currentDate() public view returns (uint256) {
-        return block.timestamp.div(1 hours);
+        return block.timestamp.div(1 days);
     }
 }
