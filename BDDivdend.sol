@@ -22,7 +22,7 @@ contract BDDivdend is Ownable {
     mapping(address => uint256) public pairRewardTotal;
     uint256 public totalStaked;
 
-    uint256 public divdendAmount = 1000000000000000000000000;
+    uint256 public divdendAmount = 1000000 * 10**18;
     uint256 public stakeEndTime;
     event Staked(address indexed user, uint256 amount);
     event Withdrawn(address indexed user, uint256 amount);
@@ -55,9 +55,9 @@ contract BDDivdend is Ownable {
 
     function executeDivdend() external onlyOwner {
         require(possible(), "insufficient progress");
-        BDToken.safeTransferFrom(treasury, address(this), divdendAmount);
         divdendCount += 1;
         stakeEndTime = block.timestamp.add(2 days).div(1 days).mul(1 days);
+        BDToken.safeTransferFrom(treasury, address(this), divdendAmount);
     }
 
     function stake(uint256 value) external {
@@ -70,8 +70,10 @@ contract BDDivdend is Ownable {
 
     function withdraw(uint256 value) external updateData {
         require(block.timestamp > stakeEndTime, "locked");
+        getReward();
         if (value > 0) {
             balances[msg.sender] = balances[msg.sender].sub(value);
+            totalStaked = totalStaked.sub(value);
             BDPair.safeTransfer(msg.sender, value);
             emit Withdrawn(msg.sender, value);
         }
@@ -89,7 +91,7 @@ contract BDDivdend is Ownable {
     }
 
     function getReward() public updateData {
-        require(block.timestamp > stakeEndTime, "divdending");
+        require(block.timestamp > stakeEndTime, "locked");
         uint256 reward = pairReward(msg.sender);
         if (reward > 0) {
             pairRewardTotal[msg.sender] = pairRewardTotal[msg.sender].add(

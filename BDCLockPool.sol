@@ -39,11 +39,15 @@ contract BDCLockPool {
     }
 
     function lockToken(address to, uint256 lock) external checkRelease {
+        require(lock > 0, "lock is zero");
         uint256 value = available(to);
         upgradeLockedTokens[to].unlocked = value;
-        lockedTotal += lock;
-        upgradeLockedTokens[to].locked += lock;
+        upgradeLockedTokens[to].locked = upgradeLockedTokens[to].locked.add(
+            lock
+        );
+        lockedTotal = lockedTotal.sub(upgradeLockedTokens[to].lockedSnap);
         upgradeLockedTokens[to].lockedSnap = upgradeLockedTokens[to].locked;
+        lockedTotal = lockedTotal.add(upgradeLockedTokens[to].lockedSnap);
         upgradeLockedTokens[to].lastRewardDate = currentDate();
         BDC.transferFrom(msg.sender, address(this), lock);
         emit Locking(to, lock);
@@ -67,7 +71,7 @@ contract BDCLockPool {
                         .lockedSnap
                         .mul(dailyReleaseRate.mul(100 - n).div(100))
                         .div(RATIO)
-                        .mul(lastDay - decreaseDate[i])
+                        .mul(lastDay.sub(decreaseDate[i]))
                 );
                 if (i == 0) {
                     lastMinute = decreaseDate[i];
@@ -76,20 +80,20 @@ contract BDCLockPool {
                 value = value.add(
                     lockInfo
                         .lockedSnap
-                        .mul(dailyReleaseRate.mul(100 - i).div(100))
+                        .mul(dailyReleaseRate.mul(100 - n).div(100))
                         .div(RATIO)
-                        .mul(lastDay - lockInfo.lastRewardDate)
+                        .mul(lastDay.sub(lockInfo.lastRewardDate))
                 );
                 break;
             }
         }
-        if (!isDecrease) {
+        if (decreaseDate.length == 0) {
             lastMinute = currentDate();
         }
         if (lastMinute > 0) {
             value = value.add(
                 lockInfo.lockedSnap.mul(dailyReleaseRate).div(RATIO).mul(
-                    lastMinute - lockInfo.lastRewardDate
+                    lastMinute.sub(lockInfo.lastRewardDate)
                 )
             );
         }
@@ -104,7 +108,7 @@ contract BDCLockPool {
 
         uint256 value = available(msg.sender);
 
-        withdrawTotal += value;
+        withdrawTotal = withdrawTotal.add(value);
         lt.locked = lt.locked.sub(value);
         lt.unlocked = 0;
         lt.lastRewardDate = currentDate();
@@ -136,7 +140,7 @@ contract BDCLockPool {
     }
 
     modifier checkRelease() {
-        if (!isDecrease && lockedTotal.div(100) >= 1000000000000000000000000) {
+        if (!isDecrease && lockedTotal.div(100) >= 150000000000000000000000) {
             isDecrease = true;
         }
 
@@ -148,7 +152,7 @@ contract BDCLockPool {
             decreaseDate.push(currentDate());
         }
         _;
-        if (!isDecrease && lockedTotal.div(100) >= 1000000000000000000000000) {
+        if (!isDecrease && lockedTotal.div(100) >= 150000000000000000000000) {
             isDecrease = true;
         }
 
