@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity >=0.6.0;
+pragma solidity 0.7.6;
 
 import "./BDCToken.sol";
 
@@ -140,25 +140,14 @@ contract BDCLockPool {
     }
 
     modifier checkRelease() {
-        if (!isDecrease && lockedTotal.div(100) >= 150000000000000000000000) {
-            isDecrease = true;
-        }
-
-        if (
-            isDecrease &&
-            withdrawTotal / 3800000000000000000000000 > decreaseDate.length &&
-            decreaseDate.length < 50
-        ) {
-            decreaseDate.push(currentDate());
-        }
         _;
-        if (!isDecrease && lockedTotal.div(100) >= 150000000000000000000000) {
+        if (!isDecrease && lockedTotal.div(100) >= 150000 * 10**18) {
             isDecrease = true;
         }
 
-        if (
+        while (
             isDecrease &&
-            withdrawTotal / 3800000000000000000000000 > decreaseDate.length &&
+            withdrawTotal / (500000 * 10**18) > decreaseDate.length &&
             decreaseDate.length < 50
         ) {
             decreaseDate.push(currentDate());

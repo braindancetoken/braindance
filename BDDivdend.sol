@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity >=0.6.0;
+pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
@@ -30,12 +30,10 @@ contract BDDivdend is Ownable {
 
     constructor(
         IERC20 BDToken_,
-        IERC20 BDPair_,
-        address treasury_
+        IERC20 BDPair_
     ) {
         BDToken = BDToken_;
         BDPair = BDPair_;
-        treasury = treasury_;
         startAmount = BDToken.balanceOf(address(BDToken));
     }
 
@@ -57,7 +55,7 @@ contract BDDivdend is Ownable {
         require(possible(), "insufficient progress");
         divdendCount += 1;
         stakeEndTime = block.timestamp.add(2 days).div(1 days).mul(1 days);
-        BDToken.safeTransferFrom(treasury, address(this), divdendAmount);
+        BDToken.safeTransferFrom(msg.sender, address(this), divdendAmount);
     }
 
     function stake(uint256 value) external {
